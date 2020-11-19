@@ -1,35 +1,52 @@
-import "./stylesheets/main.css";
+// This is main process of Electron, started as first thing when your
+// app starts. It runs through entire life of your application.
+// It doesn't have any windows which you can see on screen, but we can open
+// window from here.
 
-// Small helpers you might want to keep
-import "./helpers/context_menu.js";
-import "./helpers/external_links.js";
+import path from "path";
+import url from "url";
+import { app } from "electron";
+import createWindow from "./helpers/window";
 
-// ----------------------------------------------------------------------------
-// Everything below is just to show you how it works. You can delete all of it.
-// ----------------------------------------------------------------------------
-
-import { remote } from "electron";
-import jetpack from "fs-jetpack";
-import { greet } from "./hello_world/hello_world";
+// Special module holding environment variables which you declared
+// in config/env_xxx.json file.
 import env from "env";
 
-const app = remote.app;
-const appDir = jetpack.cwd(app.getAppPath());
-
-// Holy crap! This is browser window with HTML and stuff, but I can read
-// files from disk like it's node.js! Welcome to Electron world :)
-const manifest = appDir.read("package.json", "json");
-
-const osMap = {
-  win32: "Windows",
-  darwin: "macOS",
-  linux: "Linux"
+const setApplicationMenu = () => {
 };
 
-document.querySelector("#app").style.display = "block";
-document.querySelector("#greet").innerHTML = greet();
-document.querySelector("#os").innerHTML = osMap[process.platform];
-document.querySelector("#author").innerHTML = manifest.author;
-document.querySelector("#env").innerHTML = env.name;
-document.querySelector("#electron-version").innerHTML =
-  process.versions.electron;
+// Save userData in separate folders for each environment.
+// Thanks to this you can use production and development versions of the app
+// on same machine like those are two separate apps.
+if (env.name !== "production") {
+  const userDataPath = app.getPath("userData");
+  app.setPath("userData", `${userDataPath} (${env.name})`);
+}
+
+app.on("ready", () => {
+  setApplicationMenu();
+
+  const mainWindow = createWindow("main", {
+    width: 1000,
+    height: 600,
+    webPreferences: {
+      nodeIntegration: true
+    }
+  });
+
+  mainWindow.loadURL(
+    url.format({
+      pathname: path.join(__dirname, "app.html"),
+      protocol: "file:",
+      slashes: true
+    })
+  );
+
+  if (env.name === "development") {
+    mainWindow.openDevTools();
+  }
+});
+
+app.on("window-all-closed", () => {
+  app.quit();
+});
