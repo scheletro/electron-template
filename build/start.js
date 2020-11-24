@@ -1,20 +1,29 @@
 const childProcess = require("child_process");
-const electron = require("electron");
+// electron
+const command = require("electron");
+// webpack
 const webpack = require("webpack");
-const config = require("./webpack.app.config");
+// configuration
+const electron = require("./webpack.electron.config");
+const renderer = require("./webpack.renderer.config");
 
 const env = "development";
-const compiler = webpack(config(env));
-let electronStarted = false;
+const ElectonCompiler = webpack(electron(env));
+const RendererCompiler = webpack(renderer(env));
 
-const watching = compiler.watch({}, (err, stats) => {
+let electronStarted = false;
+// watcher
+const RendererWatcher = RendererCompiler.watch({}, () => { });
+
+const ElectonWatcher = ElectonCompiler.watch({}, (err, stats) => {
   if (!err && !stats.hasErrors() && !electronStarted) {
     electronStarted = true;
 
     childProcess
-      .spawn(electron, ["."], { stdio: "inherit" })
+      .spawn(command, ["."], { stdio: "inherit" })
       .on("close", () => {
-        watching.close();
+        RendererWatcher.close();
+        ElectonWatcher.close();
       });
   }
 });
