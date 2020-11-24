@@ -24,6 +24,11 @@ module.exports = env => {
           exclude: /node_modules/,
           use: ["babel-loader"]
         },
+        // document: https://webpack.js.org/loaders/worker-loader/#root
+        {
+          test: /\.worker\.js$/,
+          use: { loader: 'worker-loader' },
+        },
         {
           test: /\.css$/,
           use: ["style-loader", "css-loader"]
